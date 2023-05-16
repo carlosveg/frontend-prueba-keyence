@@ -1,18 +1,23 @@
-import { Alert, Button, Snackbar, Stack, TextField } from '@mui/material'
-import { useState } from 'react'
+import { Button, Stack, TextField } from '@mui/material'
+import { SetStateAction, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import styled from 'styled-components'
+import { SnackBar } from '..'
 import { User } from '../../models'
+import { URL_API } from '../../utils'
+import { getUsers } from '../../Services'
 
-const FormCreate = () => {
+interface Props {
+  setTableData: React.Dispatch<SetStateAction<User[]>>
+  handleClose: () => void
+}
+
+const FormCreate: React.FC<Props> = ({ setTableData, handleClose }) => {
   const [open, setOpen] = useState<boolean>(false)
   const [successInserted, setSuccessInserted] = useState<boolean>(false)
   const { handleSubmit, register } = useForm<User>()
-  const URL_API = 'http://localhost:3000/users'
 
   const onSubmit = async (data: User) => {
-    console.log(data)
-
     const isInserted = await fetch(URL_API, {
       method: 'POST',
       headers: {
@@ -21,15 +26,14 @@ const FormCreate = () => {
       },
       body: JSON.stringify(data)
     })
-
-    console.log(isInserted.ok)
-
-    if (isInserted.ok) setSuccessInserted(true)
-
+    if (isInserted.ok) {
+      setSuccessInserted(true)
+      getUsers(setTableData)
+    }
     setOpen(true)
   }
 
-  const handleClose = (
+  const handleCloseSnackBar = (
     event?: React.SyntheticEvent | Event,
     reason?: string
   ) => {
@@ -42,9 +46,9 @@ const FormCreate = () => {
   }
 
   return (
-    <FormCreateStyle>
+    <>
       <form onSubmit={handleSubmit(onSubmit)} autoComplete='off'>
-        <Stack spacing={2} direction='row'>
+        <Stack spacing={2} direction='row' sx={{ marginTop: 4 }}>
           <Stack spacing={2} direction='column' sx={{ marginBottom: 4 }}>
             <TextField
               id='outlined-basic'
@@ -86,29 +90,28 @@ const FormCreate = () => {
             />
           </Stack>
         </Stack>
-        <Button variant='contained' type='submit'>
-          Guardar usuario
-        </Button>
+        <Stack spacing={2} direction='row'>
+          <Button color='error' onClick={handleClose}>
+            Cancelar
+          </Button>
+          <Button variant='contained' type='submit'>
+            Guardar
+          </Button>
+        </Stack>
       </form>
-      <Snackbar open={open} autoHideDuration={5000} onClose={handleClose}>
-        <Alert
-          onClose={handleClose}
-          severity={`${successInserted ? 'success' : 'error'}`}
-          sx={{ width: '100%' }}
-        >
-          {successInserted
-            ? 'Usuario almacenado con éxito!'
-            : 'Ocurrió un error!'}
-        </Alert>
-      </Snackbar>
-    </FormCreateStyle>
+      <SnackBar
+        open={open}
+        handleClose={handleCloseSnackBar}
+        success={successInserted}
+      />
+    </>
   )
 }
 
 export const FormCreateStyle = styled.div`
-  height: 500px;
+  /* height: 500px;
   display: grid;
-  place-content: center;
+  place-content: center; */
 `
 
 export default FormCreate

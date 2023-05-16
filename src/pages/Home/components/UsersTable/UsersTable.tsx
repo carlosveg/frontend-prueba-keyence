@@ -1,29 +1,26 @@
 import { DataGrid, GridRenderCellParams } from '@mui/x-data-grid'
-import { useEffect, useState } from 'react'
-import { User } from '../../models'
-import { Button, IconButton } from '@mui/material'
-import DeleteIcon from '@mui/icons-material/Delete'
-import EditIcon from '@mui/icons-material/Edit'
+import { SetStateAction, useEffect, useState } from 'react'
+import { getUsers } from '../../../../Services'
+import { User } from '../../../../models'
+import { UserActions } from '../UserActions'
 
-const UsersTable = () => {
-  const URL_API = 'http://localhost:3000/users'
-  const [tableData, setTableData] = useState<User[]>([])
+interface Props {
+  tableData: User[]
+  setTableData: React.Dispatch<SetStateAction<User[]>>
+}
+
+const UsersTable: React.FC<Props> = ({ tableData, setTableData }) => {
+  const [rowId, setRowId] = useState<string | null>(null)
 
   useEffect(() => {
-    const getData = async () => {
-      const response = await fetch(URL_API)
-      const data = await response.json()
-
-      setTableData(data)
-    }
-
-    getData()
+    getUsers(setTableData)
   }, [])
 
   const columns = [
     {
       field: 'user_id',
       headerName: 'User ID',
+      editable: true,
       flex: 1,
       width: 50,
       renderCell: (params: GridRenderCellParams) => <div>{params.value}</div>
@@ -38,6 +35,7 @@ const UsersTable = () => {
     {
       field: 'date',
       headerName: 'Date',
+      // type: 'date',
       flex: 1,
       width: 50,
       renderCell: (params: GridRenderCellParams) => <div>{params.value}</div>
@@ -47,6 +45,7 @@ const UsersTable = () => {
       headerName: 'Punch In',
       flex: 1,
       width: 50,
+      editable: true,
       renderCell: (params: GridRenderCellParams) => <div>{params.value}</div>
     },
     {
@@ -54,35 +53,43 @@ const UsersTable = () => {
       headerName: 'Punch Out',
       flex: 1,
       width: 50,
+      editable: true,
       renderCell: (params: GridRenderCellParams) => <div>{params.value}</div>
     },
     {
       field: 'actions',
       headerName: '',
       type: 'actions',
-      width: 350,
-      renderCell: () => (
+      sortable: false,
+      width: 200,
+      editable: true,
+      showInMenu: true,
+      renderCell: (params: GridRenderCellParams) => (
         <>
-          <IconButton aria-label='delete' color='error' size='large'>
-            <DeleteIcon />
-          </IconButton>
-          <IconButton aria-label='delete' color='primary' size='large'>
-            <EditIcon />
-          </IconButton>
+          <UserActions
+            user={params.row}
+            rowId={rowId}
+            setRowId={setRowId}
+            setTableData={setTableData}
+          />
         </>
       )
     }
   ]
+
   return (
-    <main className='container'>
+    <>
       <DataGrid
         columns={columns}
         rows={tableData}
-        getRowId={(row) => row.username}
+        getRowId={(row) => `${row.username}, ${row.date}`}
         pageSizeOptions={[5, 10, 25]}
         initialState={{ pagination: { paginationModel: { pageSize: 5 } } }}
+        onCellEditStop={(params) =>
+          setRowId(`${params.row.username}, ${params.row.date}`)
+        }
       />
-    </main>
+    </>
   )
 }
 
